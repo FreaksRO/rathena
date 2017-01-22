@@ -31,6 +31,8 @@ struct battleground_data;
 struct quest;
 struct party_booking_ad_info;
 enum e_party_member_withdraw;
+enum sellitem_filter_type;
+
 #include <stdarg.h>
 
 enum { // packet DB
