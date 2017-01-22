@@ -693,6 +693,10 @@ enum instance_info_type {
 	IIT_MAP
 };
 
+enum sellitem_filter_type {
+	SFT_TYPE,
+	SFT_ID,
+};
 /**
  * used to generate quick script_array entries
  **/

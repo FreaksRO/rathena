@@ -22150,6 +22150,46 @@ BUILDIN_FUNC(openstorage2) {
 	return SCRIPT_CMD_SUCCESS;
 }
 
+/**
+ * sellitem "<shopname">,<type>,<param>{,<overcharge>};
+ * type @see enum e_sellitem_filter_type
+ **/
+BUILDIN_FUNC(sellitem) {
+	struct map_session_data* sd = NULL;
+	struct npc_data* nd;
+	const char* shop;
+	int type, param;
+	bool discount = false;
+
+	sd = script_rid2sd(st);
+	nullpo_retr(SCRIPT_CMD_FAILURE, sd);
+
+	shop = script_getstr(st, 2);
+	type = script_getnum(st, 3);
+	param = script_getnum(st, 4);
+	nd = npc_name2id(shop);
+	if (!nd || nd->bl.type != BL_NPC || nd->subtype != NPCTYPE_SHOP) {
+		ShowError("buildin_sellitem: Shop %s not found or NPC is not a shop.\n", shop);
+		script_pushint(st, 0);
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	if (nd->sc.option & OPTION_INVISIBLE) {
+		ShowError("buildin_sellitem: Attempted to sell item to invisible NPC %s.\n", shop);
+		script_pushint(st, 0);
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	if (script_hasdata(st, 5))
+		discount = script_getnum(st, 5);
+
+	sd->npc_shopid = nd->bl.id;
+	clif_sellitem(sd, type, param, discount);
+
+	script_pushint(st, 1);
+	return SCRIPT_CMD_SUCCESS;
+}
+
 #include "../custom/script.inc"
 
 // declarations that were supposed to be exported from npc_chat.c

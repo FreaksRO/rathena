@@ -45,6 +45,7 @@
 #include "quest.h"
 #include "cashshop.h"
 #include "channel.h"
+#include "script.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18862,6 +18863,54 @@ void clif_hat_effect_single( struct map_session_data* sd, uint16 effectId, bool 
 
 	clif_send(buf,13,&sd->bl,AREA);
 #endif
+}
+
+void clif_sellitem(struct map_session_data* sd, enum sellitem_filter_type type, int param, bool discount) {
+	int fd, i, c = 0, val;
+
+	nullpo_retv(sd);
+
+	fd = sd->fd;
+	WFIFOHEAD(fd, MAX_INVENTORY * 10 + 4);
+	WFIFOW(fd, 0) = 0xc7;
+	for (i = 0; i < MAX_INVENTORY; i++)
+	{
+		if (sd->inventory.u.items_inventory[i].nameid > 0 && sd->inventory_data[i])
+		{
+			switch (type) {
+			case SFT_TYPE:
+				if (!(1 << (itemdb_type(sd->inventory.u.items_inventory[i].nameid))&param))
+					continue;
+				break;
+			case SFT_ID:
+				if (sd->inventory.u.items_inventory[i].nameid != param)
+					continue;
+				break;
+			default:
+				ShowWarning("clif_sellitem: Unknown filter %d passed to clif_sellitem.\n", type);
+				break;
+			}
+
+			if (!itemdb_cansell(&sd->inventory.u.items_inventory[i], pc_get_group_level(sd)))
+				continue;
+
+			if (sd->inventory.u.items_inventory[i].expire_time)
+				continue; // Cannot Sell Rental Items
+
+			if (sd->inventory.u.items_inventory[i].bound && !pc_can_give_bounded_items(sd))
+				continue; // Don't allow sale of bound items
+
+			val = sd->inventory_data[i]->value_sell;
+			if (val < 0)
+				continue;
+			WFIFOW(fd, 4 + c * 10) = i + 2;
+			WFIFOL(fd, 6 + c * 10) = val;
+			WFIFOL(fd, 10 + c * 10) = discount ? pc_modifysellvalue(sd, val) : val;
+			c++;
+		}
+	}
+	WFIFOW(fd, 2) = c * 10 + 4;
+	WFIFOSET(fd, WFIFOW(fd, 2));
 }
 
 /*==========================================

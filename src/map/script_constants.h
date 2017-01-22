@@ -3731,6 +3731,9 @@
 	export_constant(IG_THROWABLE);
 	export_constant(IG_MERCENARY);
 
+	export_constant(SFT_TYPE);
+	export_constant(SFT_ID);
+
 	#undef export_constant
 
 #endif /* _SCRIPT_CONSTANTS_H_ */
